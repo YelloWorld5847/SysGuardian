@@ -3,6 +3,7 @@ import sys
 import os
 import hashlib
 import time
+import base64
 from cryptography.fernet import Fernet
 
 PORT = 137  # Port NetBIOS ouvert par défaut sur Windows
@@ -10,18 +11,20 @@ BROADCAST_IP = "255.255.255.255"
 
 
 def get_secret_key():
+    """Récupère la clé depuis la variable d'environnement"""
     key = os.environ.get('REMOTE_KEY')
     if not key:
         print("ERREUR: Variable d'environnement REMOTE_KEY non définie")
         print("Définissez-la avec: set REMOTE_KEY=votre_cle_secrete (Windows)")
         print("ou: export REMOTE_KEY=votre_cle_secrete (Linux)")
         sys.exit(1)
-    # créer une clé Fernet à partir de la clé secrète
+    # Créer une clé Fernet à partir de la clé secrète
     key_hash = hashlib.sha256(key.encode()).digest()
-    return Fernet(hashlib.urlsafe_b64encode(key_hash))
+    return Fernet(base64.urlsafe_b64encode(key_hash))
 
 
 def encrypt_message(cipher, command):
+    """Chiffre la commande avec timestamp"""
     timestamp = str(int(time.time()))
     message = f"{timestamp}|{command}"
     return cipher.encrypt(message.encode())
