@@ -11,7 +11,7 @@ import shutil
 from cryptography.fernet import Fernet
 
 HOST = "0.0.0.0"
-PORT = 137  # Port NetBIOS
+PORT = 5353  # Port mDNS (Multicast DNS) ouvert par défaut sur Windows
 VERSION = "1.0.0"
 GITHUB_REPO = "votre_username/votre_repo"  # À MODIFIER
 MAX_TIME_DIFF = 30  # Accepte les messages de max 30 secondes
