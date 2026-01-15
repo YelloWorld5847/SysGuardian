@@ -21,11 +21,26 @@ if platform.system() == "Windows":
     if sys.stderr is not None:
         sys.stderr.reconfigure(encoding='utf-8')
 
+import sys
+
+def resource_path(relative_path):
+    """Retourne le chemin correct pour les fichiers bundlés dans PyInstaller"""
+    try:
+        # PyInstaller extrait les fichiers dans un dossier temporaire
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # Si on exécute le script .py directement
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 # ========================================
 # CONFIGURATION
 # ========================================
-GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
+f = open(resource_path('key.txt'), 'r')
+GITHUB_TOKEN = f.read().strip()
+f.close()
+# print(contenu)
+# GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 GIST_ID = "6ad1f414e4e4b4af15301e0a96c454ee"
 SENDER_ID = ''.join(random.choice(string.ascii_letters) for x in range(10))
 CHECK_INTERVAL = 3
@@ -33,7 +48,7 @@ COUNTDOWN_SECONDS = 2
 
 # Configuration auto-update
 GITHUB_REPO = "YelloWorld5847/socket_com"
-CURRENT_VERSION = "3.0.1"
+CURRENT_VERSION = "3.0.3"
 CHECK_UPDATE_INTERVAL = 3600
 # ========================================
 
