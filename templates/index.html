@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Control - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #ff6b35;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .sidebar {
+            background: #0a0a0a;
+            border: 2px solid #ff6b35;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            padding: 10px 0;
+            border-bottom: 2px solid #ff6b35;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .pc-list {
+            list-style: none;
+        }
+
+        .pc-item {
+            background: #1a1a1a;
+            border: 1px solid #ff6b35;
+            border-radius: 5px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pc-item:hover {
+            background: #2a2a2a;
+            border-color: #ff8c5a;
+            transform: translateX(5px);
+        }
+
+        .pc-item.active {
+            background: #ff6b35;
+            color: #0a0a0a;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-online {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .status-offline {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .main-content {
+            background: #0a0a0a;
+            border: 2px solid #ff6b35;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .pc-name {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 15px;
+            border-bottom: 2px solid #ff6b35;
+            margin-bottom: 20px;
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .control-section {
+            background: #1a1a1a;
+            border: 1px solid #ff6b35;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ff6b35;
+            text-transform: uppercase;
+        }
+
+        .text-info {
+            font-size: 12px;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            background: #0a0a0a;
+            border: 1px solid #ff6b35;
+            border-radius: 5px;
+            color: #ff6b35;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #ff8c5a;
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+        }
+
+        button {
+            background: #ff6b35;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #ff8c5a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .shutdown-btn {
+            background: #ff0000;
+            color: white;
+        }
+
+        .shutdown-btn:hover:not(:disabled) {
+            background: #ff3333;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #ff6b35;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-area:hover {
+            border-color: #ff8c5a;
+            background: #1a1a1a;
+        }
+
+        .file-upload-area.drag-over {
+            background: #2a2a2a;
+            border-color: #00ff00;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .screen-preview {
+            grid-column: 1 / -1;
+        }
+
+        .screen-container {
+            background: #000;
+            border: 1px solid #ff6b35;
+            border-radius: 5px;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screen-placeholder {
+            text-align: center;
+            opacity: 0.5;
+        }
+
+        .screen-placeholder::before {
+            content: "▶";
+            display: block;
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ff6b35;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff8c5a;
+        }
+
+        .no-selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            opacity: 0.5;
+        }
+
+        .no-selection::before {
+            content: "⚠";
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #0a0a0a;
+            border: 2px solid #ff6b35;
+            border-radius: 5px;
+            padding: 15px 20px;
+            max-width: 300px;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.success {
+            border-color: #00ff00;
+        }
+
+        .notification.error {
+            border-color: #ff0000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">PC CLASSROOM</div>
+            <ul class="pc-list" id="pcList"></ul>
+        </aside>
+
+        <main class="main-content" id="mainContent">
+            <div class="no-selection">
+                Sélectionnez un PC
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const computers = [
+            { id: 'PC-01', name: 'PC-01', status: 'online' },
+            { id: 'PC-02', name: 'PC-02', status: 'online' },
+            { id: 'PC-03', name: 'PC-03', status: 'offline' },
+            { id: 'PC-04', name: 'PC-04', status: 'online' },
+            { id: 'PC-05', name: 'PC-05', status: 'offline' },
+            { id: 'PC-06', name: 'PC-06', status: 'online' },
+            { id: 'PC-07', name: 'PC-07', status: 'online' },
+            { id: 'PC-08', name: 'PC-08', status: 'online' }
+        ];
+
+        let selectedPC = null;
+        let eventSource = null;
+
+        function init() {
+            renderPCList();
+            connectSSE();
+        }
+
+        function connectSSE() {
+            eventSource = new EventSource('/api/stream');
+            
+            eventSource.addEventListener('init', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('[SSE] État initial reçu:', data);
+                updateAllStatuses(data.pc_status);
+            });
+            
+            eventSource.addEventListener('status_update', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('[SSE] Mise à jour statut:', data);
+                updateStatus(data.pc_name, data.status);
+            });
+
+            eventSource.addEventListener('message_sent', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('[SSE] Message envoyé:', data);
+                showNotification(`Message envoyé à ${data.pc_name}`, 'success');
+            });
+
+            eventSource.addEventListener('file_uploaded', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('[SSE] Fichiers uploadés:', data);
+                showNotification(`${data.count} fichier(s) envoyé(s) à ${data.pc_name}`, 'success');
+            });
+            
+            eventSource.onerror = (error) => {
+                console.error('[SSE] Erreur:', error);
+                setTimeout(() => {
+                    eventSource.close();
+                    connectSSE();
+                }, 3000);
+            };
+        }
+
+        function updateAllStatuses(pcStatus) {
+            Object.keys(pcStatus).forEach(pcName => {
+                updateStatus(pcName, pcStatus[pcName]);
+            });
+        }
+
+        function updateStatus(namePC, status) {
+            const pc = computers.find(p => p.name === namePC);
+            if (pc) {
+                pc.status = status;
+            }
+            
+            const items = document.querySelectorAll('.pc-item');
+            items.forEach(item => {
+                const span = item.querySelector('span');
+                if (!span) return;
+                if (span.textContent.trim() === namePC) {
+                    const indicator = item.querySelector('.status-indicator');
+                    if (!indicator) return;
+                    indicator.classList.remove('status-online', 'status-offline');
+                    indicator.classList.add(`status-${status}`);
+                }
+            });
+
+            if (selectedPC && selectedPC.name === namePC) {
+                selectedPC.status = status;
+                renderMainContent();
+            }
+        }
+
+        function renderPCList() {
+            const pcList = document.getElementById('pcList');
+            pcList.innerHTML = '';
+
+            computers.forEach(pc => {
+                const li = document.createElement('li');
+                li.className = `pc-item ${selectedPC?.id === pc.id ? 'active' : ''}`;
+                li.innerHTML = `
+                    <div class="status-indicator status-${pc.status}"></div>
+                    <span>${pc.name}</span>
+                `;
+                li.addEventListener('click', () => selectPC(pc));
+                pcList.appendChild(li);
+            });
+        }
+
+        function selectPC(pc) {
+            selectedPC = pc;
+            renderPCList();
+            renderMainContent();
+        }
+
+        function renderMainContent() {
+            const mainContent = document.getElementById('mainContent');
+            
+            if (!selectedPC) {
+                mainContent.innerHTML = `
+                    <div class="no-selection">
+                        Sélectionnez un PC
+                    </div>
+                `;
+                return;
+            }
+
+            const isOffline = selectedPC.status === 'offline';
+
+            mainContent.innerHTML = `
+                <div class="pc-name">${selectedPC.name}</div>
+                
+                <div class="control-grid">
+                    <div class="control-section">
+                        <div class="section-title">Envoyer un message</div>
+                        <div class="text-info">Taille: <span id="textSize">0</span> caractères</div>
+                        <textarea id="messageText" placeholder="Tapez votre message ici..." ${isOffline ? 'disabled' : ''}></textarea>
+                        <button onclick="sendMessage()" ${isOffline ? 'disabled' : ''}>ENVOYER</button>
+                    </div>
+
+                    <div class="control-section">
+                        <div class="section-title">Envoyer des fichiers</div>
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <div></div>
+                            <div>Cliquez ou glissez des fichiers</div>
+                            <div style="font-size: 12px; margin-top: 10px; opacity: 0.7;">
+                                Fichiers et dossiers acceptés
+                            </div>
+                        </div>
+                        <input type="file" id="fileInput" multiple ${isOffline ? 'disabled' : ''}>
+                        <button onclick="document.getElementById('fileInput').click()" ${isOffline ? 'disabled' : ''}>PARCOURIR</button>
+                    </div>
+
+                    <div class="control-section screen-preview">
+                        <div class="section-title">Écran en temps réel</div>
+                        <div class="screen-container">
+                            <div class="screen-placeholder">
+                                ${isOffline ? 'PC hors ligne' : 'En attente de connexion...'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-section" style="grid-column: 1 / -1;">
+                        <button class="shutdown-btn" onclick="shutdownPC()" ${isOffline ? 'disabled' : ''}>ÉTEINDRE LE PC</button>
+                    </div>
+                </div>
+            `;
+
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            const messageText = document.getElementById('messageText');
+            const textSize = document.getElementById('textSize');
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            if (messageText) {
+                messageText.addEventListener('input', () => {
+                    textSize.textContent = messageText.value.length;
+                });
+            }
+
+            if (fileUploadArea && !selectedPC.status === 'offline') {
+                fileUploadArea.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileUploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.classList.add('drag-over');
+                });
+
+                fileUploadArea.addEventListener('dragleave', () => {
+                    fileUploadArea.classList.remove('drag-over');
+                });
+
+                fileUploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.classList.remove('drag-over');
+                    handleFiles(e.dataTransfer.files);
+                });
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    handleFiles(e.target.files);
+                });
+            }
+        }
+
+        async function sendMessage() {
+            const messageText = document.getElementById('messageText');
+            const message = messageText.value.trim();
+            
+            if (!message) {
+                showNotification('Veuillez entrer un message', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pc_name: selectedPC.name,
+                        message: message
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('[API] Message envoyé:', data);
+                    messageText.value = '';
+                    document.getElementById('textSize').textContent = '0';
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('[API] Erreur:', error);
+                showNotification('Erreur de connexion au serveur', 'error');
+            }
+        }
+
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('pc_name', selectedPC.name);
+            
+            Array.from(files).forEach(file => {
+                formData.append('files', file);
+            });
+            
+            try {
+                const response = await fetch('/api/upload_file', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('[API] Fichiers envoyés:', data);
+                    document.getElementById('fileInput').value = '';
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('[API] Erreur:', error);
+                showNotification('Erreur lors de l\'envoi des fichiers', 'error');
+            }
+        }
+
+        async function shutdownPC() {
+            
+            try {
+                const response = await fetch('/api/shutdown_pc', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pc_name: selectedPC.name
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('[API] PC éteint:', data);
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('[API] Erreur:', error);
+                showNotification('Erreur de connexion au serveur', 'error');
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
