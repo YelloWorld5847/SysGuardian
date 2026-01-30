@@ -13,6 +13,8 @@ from pathlib import Path
 from tkinter import *
 import tkinter as tk
 import os
+import threading
+import textwrap
 
 # Forcer l'encodage UTF-8 pour la console Windows
 if platform.system() == "Windows":
@@ -36,22 +38,80 @@ def resource_path(relative_path):
 # ========================================
 # CONFIGURATION
 # ========================================
-f = open(resource_path('key.txt'), 'r')
-GITHUB_TOKEN = f.read().strip()
+f = open(resource_path('C:\ProgramData\VAR\id_pc.txt'), 'r')
+pc_id = f.read().strip()
 f.close()
-# print(contenu)
-# GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
-GIST_ID = "6ad1f414e4e4b4af15301e0a96c454ee"
-SENDER_ID = ''.join(random.choice(string.ascii_letters) for x in range(10))
 CHECK_INTERVAL = 3
 COUNTDOWN_SECONDS = 2
 
 # Configuration auto-update
 GITHUB_REPO = "YelloWorld5847/socket_com"
-CURRENT_VERSION = "3.0.3"
+CURRENT_VERSION = "4.0.1"
 CHECK_UPDATE_INTERVAL = 3600
 # ========================================
 
+
+def popup(msg):
+    def gui():
+        root = tk.Tk()
+        root.wm_attributes("-topmost", True)
+
+        # Taille de base de la fenêtre
+        width, height = 600, 400
+        root.geometry(f"{width}x{height}")
+
+        # 1) Déterminer la taille de police en fonction de la longueur
+        n = len(msg)
+
+        # seuils à ajuster selon ton besoin
+        if n < 80:
+            font_size = 30
+            use_scroll = False
+        elif n < 250:
+            font_size = 20
+            use_scroll = False
+        else:
+            font_size = 14
+            use_scroll = True
+
+        if not use_scroll:
+            # 2) Label simple, texte centré, wrap sur la largeur de la fenêtre
+            l = tk.Label(
+                root,
+                text=msg,
+                padx=40,
+                pady=40,
+                wraplength=width - 80,  # pour éviter que ça dépasse
+                justify="center"
+            )
+            l.config(font=("Arial", font_size))
+            l.pack(expand=True, fill="both")
+        else:
+            # 3) Beaucoup de texte : Text + Scrollbar
+            frame = tk.Frame(root)
+            frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+            text = tk.Text(
+                frame,
+                wrap="word",
+                font=("Arial", font_size)
+            )
+            scroll = tk.Scrollbar(frame, command=text.yview)
+            text.configure(yscrollcommand=scroll.set)
+
+            text.pack(side="left", expand=True, fill="both")
+            scroll.pack(side="right", fill="y")
+
+            # on peut éventuellement couper manuellement en lignes
+            # pour éviter les lignes trop longues :
+            wrapped = "\n".join(textwrap.wrap(msg, width=90))
+            text.insert("1.0", wrapped)
+            text.config(state="disabled")  # lecture seule
+
+        root.mainloop()
+
+    t = threading.Thread(target=gui, daemon=True)
+    t.start()
 
 class AutoUpdater:
     def __init__(self, repo, current_version):
@@ -226,16 +286,7 @@ start "" "{current_exe}"
 
 
 class AutonomousListener:
-    def __init__(self, token, gist_id, sender_id):
-        self.token = token
-        self.gist_id = gist_id
-        self.sender_id = sender_id
-        self.headers = {
-            "Authorization": f"token {token}",
-            "Accept": "application/vnd.github.v3+json"
-        }
-        self.api_url = "https://api.github.com/gists"
-        self.last_timestamp = time.time() - 10
+    def __init__(self):
         self.last_update_check = 0
         self.updater = AutoUpdater(GITHUB_REPO, CURRENT_VERSION)
 
@@ -275,19 +326,10 @@ class AutonomousListener:
     def get_messages(self):
         """Récupère tous les messages du Gist"""
         try:
-            response = requests.get(
-                f"{self.api_url}/{self.gist_id}",
-                headers=self.headers,
-                timeout=10
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-                content = data['files']['messages.json']['content']
-                return json.loads(content).get('messages', [])
-
-            return []
-
+            url = f"http://127.0.0.1:5000/api/commands?pc_id={pc_id}"
+            print(url)
+            r = requests.get(url)
+            return r.json()
         except Exception as e:
             self.log(f"Erreur lecture messages : {e}", "ERROR")
             return []
@@ -315,24 +357,15 @@ class AutonomousListener:
         except Exception as e:
             self.log(f"Erreur lors de l'extinction : {e}", "ERROR")
 
-    def process_message(self, msg):
+    def process_message(self, msg, c_type):
         """Traite un message reçu"""
-        content = msg['content'].strip()
-        sender = msg['sender']
+        self.log(f"Message : {msg}", "INFO")
 
-        self.log(f"Message de [{sender}] : {content}", "INFO")
-
-        if content.upper() == "SHUTDOWN":
+        if c_type == "SHUTDOWN":
             self.shutdown_pc()
             return True
-        elif "MSG " in content.upper():
-            msg = content[4:]
-            root = Tk()
-            root.wm_attributes("-topmost", True)
-            l = Label(root, text=msg, padx=100, pady=100)
-            l.config(font=("Arial", 30))
-            l.pack()
-            tk.mainloop()
+        elif c_type == "MSG":
+            popup(msg)
 
         return False
 
@@ -342,8 +375,7 @@ class AutonomousListener:
         self.log("SCRIPT D'ECOUTE AUTONOME DEMARRE", "SUCCESS")
         self.log("=" * 60, "INFO")
         self.log(f"Version : {CURRENT_VERSION}", "INFO")
-        self.log(f"ID de ce PC : {self.sender_id}", "INFO")
-        self.log(f"Gist ID : {self.gist_id}", "INFO")
+        self.log(f"ID de ce PC : {pc_id}", "INFO")
         self.log(f"Intervalle de verification : {CHECK_INTERVAL}s", "INFO")
         self.log(f"Verification des updates : {CHECK_UPDATE_INTERVAL}s", "INFO")
         self.log(f"Commande d'extinction : SHUTDOWN", "INFO")
@@ -361,20 +393,16 @@ class AutonomousListener:
                 try:
                     self.check_for_updates()
 
-                    messages = self.get_messages()
+                    full_commands = self.get_messages()
                     consecutive_errors = 0
-
-                    for msg in messages:
-                        if msg['timestamp'] <= self.last_timestamp:
-                            continue
-
-                        if msg['sender'] == self.sender_id:
-                            continue
-
-                        if self.process_message(msg):
+                    print(full_commands)
+                    for full_command in full_commands:
+                        command_info = full_command["command_info"]
+                        c_type = command_info["type"]
+                        command = command_info["command"]
+                        if self.process_message(command, c_type):
                             return
 
-                        self.last_timestamp = msg['timestamp']
 
                     time.sleep(CHECK_INTERVAL)
 
@@ -399,17 +427,7 @@ class AutonomousListener:
 
 
 if __name__ == '__main__':
-    if not GITHUB_TOKEN or GITHUB_TOKEN == "VOTRE_TOKEN_ICI":
-        print("[x] ERREUR : GITHUB_TOKEN non configure !")
-        print("Modifiez le script et ajoutez votre token GitHub")
-        exit(1)
-
-    if not GIST_ID:
-        print("[x] ERREUR : GIST_ID non configure !")
-        print("Creez un Gist et ajoutez l'ID dans le script")
-        exit(1)
-
-    listener = AutonomousListener(GITHUB_TOKEN, GIST_ID, SENDER_ID)
+    listener = AutonomousListener()
     listener.run()
 
     print("\n[*] Script termine")
