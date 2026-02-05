@@ -28,6 +28,7 @@ alive_pcs = []
 # SERVEUR
 
 def update_pc_dead(timeout):
+    global alive_pcs
     print("UDPATE EN COURS")
     copy_alive_pcs = alive_pcs.copy()
     for i, alive_pc in enumerate(copy_alive_pcs):
@@ -101,6 +102,8 @@ def get_value():
 # ===== ROUTES POUR RECUPERER LES PC ALUME =====
 @app.route("/api/online", methods=["GET"])
 def update_pc_alive():
+    global alive_pcs
+    
     pc_id = request.args.get('pc_id')
     
     for alive_pc in alive_pcs:
