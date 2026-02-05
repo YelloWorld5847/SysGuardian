@@ -15,6 +15,7 @@ import tkinter as tk
 import os
 import threading
 import textwrap
+import platform
 
 # Forcer l'encodage UTF-8 pour la console Windows
 if platform.system() == "Windows":
@@ -38,15 +39,17 @@ def resource_path(relative_path):
 # ========================================
 # CONFIGURATION
 # ========================================
-f = open(resource_path('C:\ProgramData\VAR\id_pc.txt'), 'r')
-pc_id = f.read().strip()
-f.close()
-CHECK_INTERVAL = 3
+# f = open(resource_path('C:\ProgramData\VAR\id_pc.txt'), 'r')
+# pc_id = f.read().strip()
+# f.close()
+pc_id = platform.node()
+
+CHECK_INTERVAL = 2
 COUNTDOWN_SECONDS = 2
 
 # Configuration auto-update
 GITHUB_REPO = "YelloWorld5847/socket_com"
-CURRENT_VERSION = "4.0.1"
+CURRENT_VERSION = "4.1.0"
 CHECK_UPDATE_INTERVAL = 3600
 # ========================================
 
@@ -326,8 +329,7 @@ class AutonomousListener:
     def get_messages(self):
         """Récupère tous les messages du Gist"""
         try:
-            url = f"http://127.0.0.1:5000/api/commands?pc_id={pc_id}"
-            print(url)
+            url = f"https://sysguardian.neolysium.eu/api/commands?pc_id={pc_id}"
             r = requests.get(url)
             return r.json()
         except Exception as e:
@@ -356,6 +358,14 @@ class AutonomousListener:
                 self.log(f"Systeme non supporte : {system}", "ERROR")
         except Exception as e:
             self.log(f"Erreur lors de l'extinction : {e}", "ERROR")
+
+    def send_alive(self):
+        try:
+            url = f"https://sysguardian.neolysium.eu/api/online?pc_id={pc_id}"
+            r = requests.get(url)
+        except Exception as e:
+            self.log(f"Erreur lecture messages : {e}", "ERROR")
+
 
     def process_message(self, msg, c_type):
         """Traite un message reçu"""
@@ -387,24 +397,28 @@ class AutonomousListener:
 
         consecutive_errors = 0
         max_errors = 5
-
+        i = 1
         try:
             while True:
                 try:
-                    self.check_for_updates()
+                    if i % 5 == 0:
+                        self.check_for_updates()
 
-                    full_commands = self.get_messages()
-                    consecutive_errors = 0
-                    print(full_commands)
-                    for full_command in full_commands:
-                        command_info = full_command["command_info"]
-                        c_type = command_info["type"]
-                        command = command_info["command"]
-                        if self.process_message(command, c_type):
-                            return
+                    if i % random.randint(10, 15) == 0:
+                        full_commands = self.get_messages()
+                        consecutive_errors = 0
+                        print(full_commands)
+                        for full_command in full_commands:
+                            command_info = full_command["command_info"]
+                            c_type = command_info["type"]
+                            command = command_info["command"]
+                            if self.process_message(command, c_type):
+                                return
+                    
+                    if i % random.randint(20, 25) == 0:
+                        self.send_alive()
 
-
-                    time.sleep(CHECK_INTERVAL)
+                    time.sleep(1)
 
                 except requests.exceptions.RequestException as e:
                     consecutive_errors += 1
@@ -419,6 +433,9 @@ class AutonomousListener:
                 except Exception as e:
                     self.log(f"Erreur inattendue : {e}", "ERROR")
                     time.sleep(CHECK_INTERVAL)
+
+                finally:
+                    i += 1
 
         except KeyboardInterrupt:
             self.log("", "INFO")
