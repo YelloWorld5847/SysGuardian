@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, Response
 import json
 import queue
 import threading
+import time
 
 app = Flask(__name__)
 
@@ -22,8 +23,33 @@ PC_STATUS = {
 import uuid
 
 commands = {}
+alive_pcs = []
 
 # SERVEUR
+
+def update_pc_dead(timeout):
+    print("UDPATE EN COURS")
+    copy_alive_pcs = alive_pcs.copy()
+    for i, alive_pc in enumerate(copy_alive_pcs):
+        now = time.time()
+        time_alive_pc = alive_pc["time"]
+        time_end = now - time_alive_pc
+        if time_end > timeout:
+            a = alive_pc["pc_id"]
+            print(f"SUPPRESSION DE {a}")
+            alive_pcs.pop(i)
+    print(f"[DEAD] LISTE DES PC EN VIE : {alive_pcs}")
+
+
+def worker():
+    while True:
+        update_pc_dead(30)
+        time.sleep(5)
+
+t = threading.Thread(target=worker, daemon=True)
+t.start()
+
+
 def add_command(command_info, pc_id):
     id = str(uuid.uuid4())
     print(id)
@@ -66,6 +92,28 @@ def get_text():
             del_command(command_filtred["command_id"])
     return jsonify(commands_filtred)
 
+
+@app.route("/api/pc_online")
+def get_value():
+    print(f"alive_pcs : {alive_pcs}")
+    return jsonify(alive_pcs)
+
+# ===== ROUTES POUR RECUPERER LES PC ALUME =====
+@app.route("/api/online", methods=["GET"])
+def update_pc_alive():
+    pc_id = request.args.get('pc_id')
+    
+    for alive_pc in alive_pcs:
+        if alive_pc["pc_id"] == pc_id:
+            break
+    else:
+        if not pc_id in alive_pcs:
+            alive_pcs.append({
+                "pc_id" : pc_id,
+                "time": int(time.time())
+            })
+    print(f"LISTE DES PC EN VIE : {alive_pcs}")
+    return "OK"
 
 # ===== ROUTES POUR RECEVOIR LES ACTIONS DU FRONTEND =====
 
