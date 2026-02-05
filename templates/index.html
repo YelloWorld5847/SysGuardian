@@ -323,9 +323,8 @@
             </div>
         </main>
     </div>
-
     <script>
-        const computers = [
+        let computers = [
             { id: 'PC-01', name: 'PC-01', status: 'online' },
             { id: 'PC-02', name: 'PC-02', status: 'online' },
             { id: 'PC-03', name: 'PC-03', status: 'offline' },
@@ -632,6 +631,24 @@
         }
 
         init();
+        async function majCompteur() {
+            const res = await fetch("/api/pc_online");
+            const data = await res.json();
+            console.log(data)
+            computers = []
+            data.forEach(pc => {
+                computers.push({
+                    id: pc["pc_id"], name: pc["pc_id"], status: "online"
+                })
+                console.log(pc)
+            });
+            renderPCList()
+
+        }
+    
+        // rafraîchit toutes les 2 secondes
+        setInterval(majCompteur, 2000);
+        majCompteur();
     </script>
 </body>
 </html>
