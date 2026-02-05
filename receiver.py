@@ -48,8 +48,8 @@ CHECK_INTERVAL = 2
 COUNTDOWN_SECONDS = 2
 
 # Configuration auto-update
-GITHUB_REPO = "YelloWorld5847/socket_com"
-CURRENT_VERSION = "4.1.0"
+GITHUB_REPO = "YelloWorld5847/SysGuardian"
+CURRENT_VERSION = "4.1.4"
 CHECK_UPDATE_INTERVAL = 3600
 # ========================================
 
@@ -174,7 +174,7 @@ class AutoUpdater:
                     self.log(f"Version a jour ({self.current_version})", "SUCCESS")
                     return False, None
             else:
-                self.log(f"Impossible de verifier les mises a jour (HTTP {response.status_code})", "WARNING")
+                self.log(f"Impossible de verifier les mises a jour (HTTP {response.status_code} : {response.text})", "WARNING")
                 return False, None
 
         except Exception as e:
@@ -363,6 +363,7 @@ class AutonomousListener:
         try:
             url = f"https://sysguardian.neolysium.eu/api/online?pc_id={pc_id}"
             r = requests.get(url)
+            print(f"réponse du serveur : {r.text}")
         except Exception as e:
             self.log(f"Erreur lecture messages : {e}", "ERROR")
 
@@ -404,7 +405,7 @@ class AutonomousListener:
                     if i % 5 == 0:
                         self.check_for_updates()
 
-                    if i % random.randint(10, 15) == 0:
+                    if i % 10 == 0:
                         full_commands = self.get_messages()
                         consecutive_errors = 0
                         print(full_commands)
@@ -415,7 +416,7 @@ class AutonomousListener:
                             if self.process_message(command, c_type):
                                 return
                     
-                    if i % random.randint(20, 25) == 0:
+                    if i % 20 == 0:
                         self.send_alive()
 
                     time.sleep(1)
