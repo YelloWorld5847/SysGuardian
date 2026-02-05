@@ -45,7 +45,7 @@ def update_pc_dead(timeout):
 def worker():
     while True:
         update_pc_dead(30)
-        time.sleep(5)
+        time.sleep(30)
 
 t = threading.Thread(target=worker, daemon=True)
 t.start()
@@ -103,7 +103,7 @@ def get_value():
 @app.route("/api/online", methods=["GET"])
 def update_pc_alive():
     global alive_pcs
-    
+
     pc_id = request.args.get('pc_id')
     
     for alive_pc in alive_pcs:
