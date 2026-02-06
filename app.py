@@ -10,14 +10,7 @@ app = Flask(__name__)
 sse_clients = []
 
 PC_STATUS = {
-    "PC-01": "online",
-    "PC-02": "online",
-    "PC-03": "offline",
-    "PC-04": "online",
-    "PC-05": "offline",
-    "PC-06": "online",
-    "PC-07": "online",
-    "PC-08": "online"
+    
 }
 
 import uuid
@@ -45,7 +38,7 @@ def update_pc_dead(timeout):
 def worker():
     while True:
         update_pc_dead(30)
-        time.sleep(30)
+        time.sleep(5)
 
 t = threading.Thread(target=worker, daemon=True)
 t.start()
@@ -106,15 +99,15 @@ def update_pc_alive():
 
     pc_id = request.args.get('pc_id')
     
-    for alive_pc in alive_pcs:
+    for i, alive_pc in enumerate(alive_pcs):
         if alive_pc["pc_id"] == pc_id:
+            alive_pcs[i]["time"] = int(time.time())
             break
     else:
-        if not pc_id in alive_pcs:
-            alive_pcs.append({
-                "pc_id" : pc_id,
-                "time": int(time.time())
-            })
+        alive_pcs.append({
+            "pc_id" : pc_id,
+            "time": int(time.time())
+        })
     print(f"LISTE DES PC EN VIE : {alive_pcs}")
     return "OK"
 
@@ -128,7 +121,7 @@ def send_message():
     pc_name = data.get('pc_name')
     message = data.get('message')
     
-    print(f"📧 Message reçu pour {pc_name}: {message}")
+    print(f"Message reçu pour {pc_name}: {message}")
 
     add_command({"type": "MSG", "command": message}, pc_name)
     
@@ -151,26 +144,9 @@ def shutdown_pc():
     data = request.json
     pc_name = data.get('pc_name')
     
-    print(f"⚡ Demande d'extinction de {pc_name}")
+    print(f"Demande d'extinction de {pc_name}")
     
-    # Ici, vous pouvez envoyer la commande d'extinction au PC
-    # TODO: Remplacer par votre logique d'extinction réelle
     add_command({"type": "SHUTDOWN", "command": ""}, pc_name)
-
-    # Mettre à jour le statut
-    if pc_name in PC_STATUS:
-        PC_STATUS[pc_name] = 'offline'
-        
-        # Notifier tous les clients
-        send_sse_update('status_update', {
-            'pc_name': pc_name,
-            'status': 'offline'
-        })
-        
-        return jsonify({
-            "status": "success",
-            "message": f"{pc_name} éteint avec succès"
-        }), 200
     
     return jsonify({
         "status": "error",
@@ -198,7 +174,7 @@ def upload_file():
             # file.save(f'uploads/{filename}')  # Décommenter pour sauvegarder
             
             uploaded_files.append(filename)
-            print(f"📁 Fichier reçu: {filename} pour {pc_name}")
+            print(f"Fichier reçu: {filename} pour {pc_name}")
     
     # TODO: Envoyer les fichiers au PC cible
     
