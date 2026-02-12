@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom Control - Dashboard</title>
+    <title>SysGuardian Control - Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -313,7 +313,7 @@
 <body>
     <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header">PC CLASSROOM</div>
+            <div class="sidebar-header">PC ONLINE</div>
             <ul class="pc-list" id="pcList"></ul>
         </aside>
 
@@ -325,14 +325,7 @@
     </div>
     <script>
         let computers = [
-            { id: 'PC-01', name: 'PC-01', status: 'online' },
-            { id: 'PC-02', name: 'PC-02', status: 'online' },
-            { id: 'PC-03', name: 'PC-03', status: 'offline' },
-            { id: 'PC-04', name: 'PC-04', status: 'online' },
-            { id: 'PC-05', name: 'PC-05', status: 'offline' },
-            { id: 'PC-06', name: 'PC-06', status: 'online' },
-            { id: 'PC-07', name: 'PC-07', status: 'online' },
-            { id: 'PC-08', name: 'PC-08', status: 'online' }
+
         ];
 
         let selectedPC = null;
@@ -406,7 +399,9 @@
             if (selectedPC && selectedPC.name === namePC) {
                 selectedPC.status = status;
                 renderMainContent();
+                startScreenRefresh(); // pour relancer ou stopper le refresh
             }
+
         }
 
         function renderPCList() {
@@ -429,7 +424,9 @@
             selectedPC = pc;
             renderPCList();
             renderMainContent();
+            startScreenRefresh();
         }
+
 
         function renderMainContent() {
             const mainContent = document.getElementById('mainContent');
@@ -472,11 +469,13 @@
                     <div class="control-section screen-preview">
                         <div class="section-title">Écran en temps réel</div>
                         <div class="screen-container">
-                            <div class="screen-placeholder">
-                                ${isOffline ? 'PC hors ligne' : 'En attente de connexion...'}
-                            </div>
+                            ${isOffline
+                                ? '<div class="screen-placeholder">PC hors ligne</div>'
+                                : '<img id="screenImage" style="width: 100%; height: 100%; object-fit: contain;" />'
+                            }
                         </div>
                     </div>
+
 
                     <div class="control-section" style="grid-column: 1 / -1;">
                         <button class="shutdown-btn" onclick="shutdownPC()" ${isOffline ? 'disabled' : ''}>ÉTEINDRE LE PC</button>
@@ -635,8 +634,15 @@
             const res = await fetch("/api/pc_online");
             const data = await res.json();
             console.log(data)
+            const now = Date.now() / 1000; // Convert milliseconds to seconds
+            const timeout = 30 /* define your timeout value here */;
+
+            // Filter the list in one pass
+            const filtered_alive_pcs = data.filter(pc => now - pc.time <= timeout);
+
+            // console.log(`PCs en vie : ${filtered_alive_pcs.map(pc => pc.pc_id)}`);
             computers = []
-            data.forEach(pc => {
+            filtered_alive_pcs.forEach(pc => {
                 computers.push({
                     id: pc["pc_id"], name: pc["pc_id"], status: "online"
                 })
@@ -650,5 +656,30 @@
         setInterval(majCompteur, 2000);
         majCompteur();
     </script>
+    <script>
+        let screenInterval = null;
+        
+        function startScreenRefresh() {
+            if (screenInterval) {
+                clearInterval(screenInterval);
+                screenInterval = null;
+            }
+            if (!selectedPC || selectedPC.status === 'offline') {
+                return;
+            }
+            const img = document.getElementById('screenImage');
+            if (!img) return;
+        
+            const pcId = selectedPC.name;
+            const refresh = () => {
+                // ajout d’un paramètre cache-buster
+                img.src = `/api/screen/${encodeURIComponent(pcId)}?t=` + Date.now();
+            };
+        
+            refresh(); // première mise à jour immédiate
+            screenInterval = setInterval(refresh, 3000); // toutes les 3 s
+        }
+    </script>
+        
 </body>
 </html>
