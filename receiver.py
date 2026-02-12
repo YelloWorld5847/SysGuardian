@@ -50,7 +50,7 @@ pc_id = platform.node()
 CHECK_INTERVAL = 2
 COUNTDOWN_SECONDS = 2
 
-SERVER = "https://sysguardian.neolysium.eu/"
+SERVER = "https://sysguardian.neolysium.eu" # ne pas mettre de / à la fin
 
 # Configuration auto-update
 GITHUB_REPO = "YelloWorld5847/SysGuardian"
