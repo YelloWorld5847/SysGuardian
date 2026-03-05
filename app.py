@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, render_template, Response, send_file
+from flask import Flask, request, jsonify, render_template, Response, send_file, session, redirect, url_for
+from functools import wraps
 import json
 import queue
 import threading
@@ -6,20 +7,24 @@ import time
 from io import BytesIO
 from PIL import Image
 import base64
+import uuid
+
+# Identifiants du professeur
+ADMIN_USERNAME = "prof"
+ADMIN_PASSWORD = "0"  # à changer !
 
 last_screenshots = {}
 
-
 app = Flask(__name__)
+app.secret_key = "45fe4145f6e41s56fes654ef1s351ve8641zf65e1z6"  # clé secrète pour les sessions
 
 # Stockage des clients SSE
 sse_clients = []
 
-PC_STATUS = {
-    
-}
+PC_STATUS = {}
 
-import uuid
+pending_files = {}
+
 
 commands = {}
 alive_pcs = []
@@ -47,6 +52,14 @@ alive_pcs = []
 # t = threading.Thread(target=worker, daemon=True)
 # t.start()
 
+# Décorateur pour protéger les routes
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
 
 def add_command(command_info, pc_id):
     id = str(uuid.uuid4())
@@ -147,6 +160,7 @@ def update_pc_alive():
 # ===== ROUTES POUR RECEVOIR LES ACTIONS DU FRONTEND =====
 
 @app.route("/api/send_message", methods=["POST"])
+@login_required
 def send_message():
     """Recevoir un message depuis le frontend"""
     data = request.json
@@ -172,6 +186,7 @@ def send_message():
 
 
 @app.route("/api/shutdown_pc", methods=["POST"])
+@login_required
 def shutdown_pc():
     """Éteindre un PC"""
     data = request.json
@@ -182,36 +197,34 @@ def shutdown_pc():
     add_command({"type": "SHUTDOWN", "command": ""}, pc_name)
     
     return jsonify({
-        "status": "error",
-        "message": "PC introuvable"
-    }), 404
+        "status": "success",
+        "message": "Message Envoyer"
+    }), 200
 
+# Remplacer la fonction upload_file() existante :
 @app.route("/api/upload_file", methods=["POST"])
+@login_required
 def upload_file():
-    """Recevoir des fichiers depuis le frontend"""
     pc_name = request.form.get('pc_name')
     
     if 'files' not in request.files:
-        return jsonify({
-            "status": "error",
-            "message": "Aucun fichier reçu"
-        }), 400
+        return jsonify({"status": "error", "message": "Aucun fichier reçu"}), 400
     
     files = request.files.getlist('files')
     uploaded_files = []
     
+    if pc_name not in pending_files:
+        pending_files[pc_name] = []
+
     for file in files:
         if file.filename:
-            # Sauvegarder le fichier
-            filename = file.filename
-            # file.save(f'uploads/{filename}')  # Décommenter pour sauvegarder
-            
-            uploaded_files.append(filename)
-            print(f"Fichier reçu: {filename} pour {pc_name}")
-    
-    # TODO: Envoyer les fichiers au PC cible
-    
-    # Notifier les clients
+            pending_files[pc_name].append({
+                "filename": file.filename,
+                "data": file.read()  # stocké en RAM
+            })
+            uploaded_files.append(file.filename)
+            print(f"Fichier mis en attente: {file.filename} pour {pc_name}")
+
     send_sse_update('file_uploaded', {
         'pc_name': pc_name,
         'files': uploaded_files,
@@ -220,11 +233,34 @@ def upload_file():
     
     return jsonify({
         "status": "success",
-        "message": f"{len(uploaded_files)} fichier(s) téléchargé(s)",
+        "message": f"{len(uploaded_files)} fichier(s) en attente",
         "files": uploaded_files
     }), 200
 
+# Ajouter cette nouvelle route :
+@app.route("/api/get_files", methods=["GET"])
+def get_files():
+    """Le receiver poll cette route pour récupérer ses fichiers en attente"""
+    pc_id = request.args.get('pc_id')
+    
+    files = pending_files.pop(pc_id, [])  # récupère et vide la liste
+    
+    if not files:
+        return jsonify([])
+    
+    # Retourne les fichiers encodés en base64
+    result = []
+    for f in files:
+        result.append({
+            "filename": f["filename"],
+            "data": base64.b64encode(f["data"]).decode("utf-8")
+        })
+    
+    print(f"Envoi de {len(result)} fichier(s) à {pc_id}")
+    return jsonify(result)
+
 @app.route("/api/stream")
+@login_required
 def stream():
     """Endpoint SSE pour les mises à jour en temps réel"""
     client_queue = queue.Queue()
@@ -246,9 +282,36 @@ def stream():
     
     return Response(generate(), mimetype='text/event-stream')
 
-@app.route("/")
+@app.route("/", methods=["GET"])
+@login_required
 def index():
-    return render_template("index.html")
+    pc_selected = request.args.get('pc_selected', "")
+    print(f"pc_selected : {pc_selected}")
+    return render_template("index.html", pc_selected=pc_selected)
+
+@app.route("/map")
+@login_required
+def map():
+    return render_template("map.html")
+
+# Nouvelles routes login/logout :
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            error = "Identifiants incorrects"
+    return render_template("login.html", error=error)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 if __name__ == "__main__":
     app.run(debug=True, threaded=True)
