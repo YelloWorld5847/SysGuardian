@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+
+        :root {
+            --scale: 25;        /* ton facteur d’échelle */
+            --base-size: 10px;   /* taille de base en px */
+        }
+
+        /* .box {
+            width: calc(var(--base-size) * var(--scale));
+            height: calc(20px * var(--scale)); 
+            background: red;
+        } */
+
+
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #ff6b35;
+            padding: 20;
+            min-height: 100vh;
+        }
+
+        .pc {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            background: #0a0a0a;
+            border: 2px solid #ff6b35;
+            color: #ff6b35;
+            border-radius: 8px;
+            transition: background-color 0.35s ease, color 0.35s ease;
+        }
+        
+        .box {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            background: #141414;
+            border: 2px solid #ff6b35;
+            color: #ff6b35;
+            border-radius: 8px;
+        }
+
+        /* Survol */
+        button.pc:hover {
+            background: #ff6b35;
+            border-color: #ff6b35;
+            color: #0a0a0a;
+            cursor: pointer;
+        }
+
+        /* Clic (état enfoncé) */
+        button.pc:active {
+            background: #be522b;   /* un peu plus foncé que #ff6b35 */
+            border-color: #be522b;
+            color: #0a0a0a;
+        }
+
+        /* button.pc:active:after {
+            background: #d35a2e;
+        } */
+
+        #background {
+            position: relative;
+            background: #0a0a0a;
+            border: 2px solid #ff6b35;
+            color: #ff6b35;
+            border-radius: 8px;
+            width: calc(48px * (var(--scale) + 0.2));
+            height: calc(31px * (var(--scale) + 0.2));
+            left: calc((100vw - (48px * (var(--scale) + 0.2)))/2);
+            top: calc((100vh - (31px * (var(--scale) + 0.2)))/2);
+        }
+
+        #porte {
+            position: absolute;
+            width: calc(3.5px * var(--scale));
+            height: calc(3.5px * var(--scale));
+            bottom: -2px;
+            left: calc(39px * var(--scale));
+            background: #0a0a0a;
+            border: 2px solid #ff6b35;
+            border-top: 0px; 
+            border-right: 0px; 
+            border-bottom: 0px; 
+            border-radius: 0px;
+        }
+
+        #PC-SWITCH {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(26px * var(--scale));
+            left: calc(45px * var(--scale)); 
+        }
+
+        #PC-01 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(5px * var(--scale));
+            top: calc(20px * var(--scale));    /* Y = 100px du haut */
+            left: calc(45px * var(--scale));   /* X = 200px de la gauche */
+        }
+
+        #PC-02 {
+            position: absolute;
+            width: calc(6px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(16.8px * var(--scale));
+            left: calc(42px * var(--scale)); 
+        }
+
+        #PC-03 {
+            position: absolute;
+            width: calc(6px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(11px * var(--scale));
+            left: calc(42px * var(--scale)); 
+        }
+
+        #PC-04 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(4px * var(--scale));
+            top: calc(5px * var(--scale));
+            left: calc(45px * var(--scale)); 
+        }
+
+        #box-1 {
+            position: absolute;
+            width: calc(7px * var(--scale));
+            height: calc(2px * var(--scale));
+            top: calc(2.7px * var(--scale));
+            left: calc(41px * var(--scale));
+        }
+
+        #PC-05 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(16px * var(--scale));
+            left: calc(23px * var(--scale));
+            border-top-right-radius: 0px;
+            border-bottom-right-radius: 0px;
+        }
+
+        #box-2 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(16px * var(--scale));
+            left: calc(25.9px * var(--scale));
+            border-top-left-radius: 0px;
+            border-bottom-left-radius: 0px;
+        }
+
+        #PC-06 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(4px * var(--scale));
+            left: calc(24px * var(--scale)); 
+        }
+        
+        #PC-07 {
+            position: absolute;
+            width: calc(6px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(4px * var(--scale));
+            left: calc(17.8px * var(--scale)); 
+        }
+
+        #PC-ADMIN {
+            position: absolute;
+            width: calc(6px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(26px * var(--scale));
+            left: calc(15px * var(--scale)); 
+        }
+
+        #PC-08 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(23px * var(--scale));
+            left: calc(11.8px * var(--scale)); 
+        }
+
+        #PC-09 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(12px * var(--scale));
+            left: calc(15.9px * var(--scale)); 
+            border-top-left-radius: 0px;
+            border-bottom-left-radius: 0px;
+        }
+
+        #PC-10 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(5px * var(--scale));
+            top: calc(14.9px * var(--scale));
+            left: calc(13px * var(--scale)); 
+            border-top-right-radius: 0px;
+            border-top-left-radius: 0px;
+        }
+
+        #PC-11 {
+            position: absolute;
+            width: calc(6px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(12px * var(--scale));
+            left: calc(10px * var(--scale));
+            border-bottom-right-radius: 0px;
+            border-top-right-radius: 0px;
+        }
+
+        #PC-12 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(2px * var(--scale));
+            left: calc(12.9px * var(--scale));
+            border-top-left-radius: 0px;
+            border-bottom-left-radius: 0px;
+        }
+
+        #box-3 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(2px * var(--scale));
+            left: calc(10px * var(--scale));
+            border-top-right-radius: 0px;
+            border-bottom-right-radius: 0px;
+        }
+
+        #box-4 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(25px * var(--scale));
+            left: calc(0.3px * var(--scale));
+            border-top-left-radius: 0px;
+            border-top-right-radius: 0px;
+        }
+
+        #box-5 {
+            position: absolute;
+            width: calc(7px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(22.1px * var(--scale));
+            left: calc(0.3px * var(--scale));
+            border-bottom-left-radius: 0px;
+        }
+
+        #PC-13 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(11px * var(--scale));
+            left: calc(0.3px * var(--scale));
+        }
+
+        #PC-14 {
+            position: absolute;
+            width: calc(6px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(6px * var(--scale));
+            left: calc(0.3px * var(--scale));
+        }
+
+        #PC-15 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(4px * var(--scale));
+            top: calc(0.3px * var(--scale));
+            left: calc(0.3px * var(--scale));
+        }
+
+    </style>
+</head>
+<body>
+    <div id="background">
+        <button class="porte" id="porte"></button>
+        <button class="box" id="PC-SWITCH">SWITCH</button>
+        <button class="pc" id="PC-01">PC-01</button>
+        <button class="pc" id="PC-02">PC-02</button>
+        <button class="pc" id="PC-03">PC-03</button>
+        <button class="pc" id="PC-04">PC-04</button>
+        <button class="box" id="box-1"></button>
+        <button class="pc" id="PC-05">PC-05</button>
+        <button class="box" id="box-2"></button>
+        <button class="pc" id="PC-06">PC-06</button>
+        <button class="pc" id="PC-07">PC-07</button>
+        <button class="pc" id="PC-ADMIN">ADMIN</button>
+        <button class="pc" id="PC-08">PC-08</button>
+        <button class="pc" id="PC-09">PC-09</button>
+        <button class="pc" id="PC-10">PC-10</button>
+        <button class="pc" id="PC-11">PC-11</button>
+        <button class="pc" id="PC-12">PC-12</button>
+        <button class="box" id="box-3"></button>
+        <button class="box" id="box-4"></button>
+        <button class="box" id="box-5"></button>
+        <button class="pc" id="PC-13">PC-13</button>
+        <button class="pc" id="PC-14">PC-14</button>
+        <button class="pc" id="PC-15">PC-15</button>
+
+    </div>
+    <script>
+        console.log('SCRIPT CHARGÉ');
+        const pcs = document.querySelectorAll('.pc');
+        pcs.forEach((el) => {
+          el.addEventListener('click', function (event) {
+            console.log('Clique sur :', event.target.id, 'à', Date.now());
+            // Construction de l'URL avec paramètre GET
+            const url = `{{ url_for('index') }}?pc_selected=${encodeURIComponent(event.target.id)}`;
+            window.location.href = url;
+          });
+        });
+    </script>
+</body>
+</html>
