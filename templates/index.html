@@ -36,13 +36,27 @@
             overflow-y: auto;
         }
 
-        .sidebar-header {
+        .sidebar-header-top {
+            display: flex;
+            justify-content: space-around;
             text-align: center;
             padding: 10px 0;
             border-bottom: 2px solid #ff6b35;
             margin-bottom: 15px;
             font-size: 18px;
             font-weight: bold;
+        }
+
+        .sidebar-header {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .pc-online {
+            display: table;
         }
 
         .pc-list {
@@ -308,13 +322,42 @@
                 opacity: 1;
             }
         }
+        #plans {
+            height: 50px;
+            padding-bottom: 5px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        #plans:hover {
+            transform: scale(1.1);
+        }
+
+        #plans:active {
+            transform: scale(0.7);
+        }
+
+
     </style>
 </head>
 <body>
     <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header">PC ONLINE</div>
+            <div class="sidebar-header-top">
+                <div class="pc-online">
+                    <span class="sidebar-header">PC ONLINE</span>
+                </div>
+                <img onclick="redirect_map()" id="plans" src="/static/images/plans.png">
+            </div>
+                
             <ul class="pc-list" id="pcList"></ul>
+
+            <!-- Ajouter en bas de la sidebar, après la liste des PCs -->
+            <div style="margin-top: auto; padding-top: 15px; border-top: 1px solid #ff6b35;">
+                <button onclick="window.location.href='/logout'" 
+                        style="background: transparent; border: 1px solid #ff6b35; color: #ff6b35; font-size: 12px; padding: 8px;">
+                    DÉCONNEXION
+                </button>
+            </div>
         </aside>
 
         <main class="main-content" id="mainContent">
@@ -323,6 +366,39 @@
             </div>
         </main>
     </div>
+    <script>
+        function redirect_map() {
+            window.location.href = "{{ url_for('map') }}";
+        }
+
+        console.log("{{ pc_selected }}")
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const pcIdFromUrl = "{{ pc_selected }}";  // "test"
+            
+            if (pcIdFromUrl) {
+                console.log('PC à sélectionner:', pcIdFromUrl);
+                
+                // Attend que computers soit chargé (majCompteur)
+                const checkAndSelect = () => {
+                    const pcToSelect = computers.find(pc => pc.id === pcIdFromUrl);
+                    if (pcToSelect) {
+                        selectedPC = pcToSelect;
+                        selectPC(pcToSelect);
+                        console.log('PC sélectionné:', pcToSelect);
+                    } else if (computers.length === 0) {
+                        // Réessaie dans 500ms si computers encore vide
+                        setTimeout(checkAndSelect, 500);
+                    }
+                };
+                
+                checkAndSelect();
+            }
+        });
+
+
+    </script>
+
     <script>
         let computers = [
 
@@ -416,8 +492,12 @@
                     <span>${pc.name}</span>
                 `;
                 li.addEventListener('click', () => selectPC(pc));
+                console.log(pc)
                 pcList.appendChild(li);
             });
+            
+            console.log("computers :")
+            console.log(computers)
         }
 
         function selectPC(pc) {
