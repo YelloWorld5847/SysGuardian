@@ -19,6 +19,7 @@ import platform
 from mss import mss
 from PIL import Image
 from io import BytesIO
+import base64
 
 # Forcer l'encodage UTF-8 pour la console Windows
 if platform.system() == "Windows":
@@ -54,7 +55,7 @@ SERVER = "https://sysguardian.neolysium.eu" # ne pas mettre de / à la fin
 
 # Configuration auto-update
 GITHUB_REPO = "YelloWorld5847/SysGuardian"
-CURRENT_VERSION = "4.3.0"
+CURRENT_VERSION = "4.3.1"
 CHECK_UPDATE_INTERVAL = 3600
 # ========================================
 
@@ -331,6 +332,41 @@ class AutonomousListener:
             if new_exe:
                 self.updater.apply_update(new_exe)
 
+    def get_and_save_files(self):
+        """Récupère les fichiers en attente et les sauvegarde sur le bureau"""
+        try:
+            url = f"{SERVER}/api/get_files?pc_id={pc_id}"
+            r = requests.get(url, timeout=10)
+            files = r.json()
+            
+            if not files:
+                return
+            
+            # Dossier de destination : Bureau/SysGuardian/
+            if platform.system() == "Windows":
+                desktop = Path(os.path.join(os.path.expanduser("~"), "Desktop"))
+            elif platform.system() == "Darwin":
+                desktop = Path(os.path.join(os.path.expanduser("~"), "Desktop"))
+            else:  # Linux
+                desktop = Path(os.path.join(os.path.expanduser("~"), "Bureau"))
+            
+            dest_folder = desktop / "SysGuardian"
+            dest_folder.mkdir(parents=True, exist_ok=True)
+            
+            for f in files:
+                filename = f["filename"]
+                data = base64.b64decode(f["data"])
+                
+                dest_path = dest_folder / filename
+                with open(dest_path, "wb") as fp:
+                    fp.write(data)
+                
+                self.log(f"Fichier sauvegardé : {dest_path}", "SUCCESS")
+                popup(f"Fichier reçu !\n{filename}\n\nSauvegardé dans :\n{dest_path}")
+
+        except Exception as e:
+            self.log(f"Erreur récupération fichiers : {e}", "ERROR")
+
     def get_messages(self):
         """Récupère tous les messages du Gist"""
         try:
@@ -432,6 +468,7 @@ class AutonomousListener:
 
                     if i % 10 == 0:
                         full_commands = self.get_messages()
+                        self.get_and_save_files()
                         consecutive_errors = 0
                         print(full_commands)
                         for full_command in full_commands:
@@ -441,7 +478,7 @@ class AutonomousListener:
                             if self.process_message(command, c_type):
                                 return
                     
-                    if i % 3 == 0:
+                    if i % 1 == 0:
                         self.send_screen()
                     
                     if i % 20 == 0:
