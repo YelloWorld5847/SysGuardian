@@ -17,7 +17,7 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 last_screenshots = {}
 
 app = Flask(__name__)
-app.secret_key = os.getenv("secret_key ")  # clé secrète pour les sessions
+app.secret_key = os.getenv("secret_key")  # clé secrète pour les sessions
 
 # Stockage des clients SSE
 sse_clients = []
