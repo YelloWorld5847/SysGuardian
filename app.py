@@ -11,7 +11,7 @@ import uuid
 
 # Identifiants du professeur
 ADMIN_USERNAME = "prof"
-ADMIN_PASSWORD = "0"  # à changer !
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
 last_screenshots = {}
 
