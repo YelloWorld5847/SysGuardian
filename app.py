@@ -8,6 +8,7 @@ from io import BytesIO
 from PIL import Image
 import base64
 import uuid
+import os
 
 # Identifiants du professeur
 ADMIN_USERNAME = "prof"
@@ -16,7 +17,7 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 last_screenshots = {}
 
 app = Flask(__name__)
-app.secret_key = "45fe4145f6e41s56fes654ef1s351ve8641zf65e1z6"  # clé secrète pour les sessions
+app.secret_key = os.getenv("secret_key ")  # clé secrète pour les sessions
 
 # Stockage des clients SSE
 sse_clients = []
