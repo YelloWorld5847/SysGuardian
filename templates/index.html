@@ -718,7 +718,7 @@
             const timeout = 30 /* define your timeout value here */;
 
             // Filter the list in one pass
-            const filtered_alive_pcs = data.filter(pc => now - pc.time <= timeout);
+            const filtered_alive_pcs = data.pcs.filter(pc => now - pc.time <= timeout);
 
             // console.log(`PCs en vie : ${filtered_alive_pcs.map(pc => pc.pc_id)}`);
             computers = []
