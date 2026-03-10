@@ -136,8 +136,10 @@ def get_text():
 
 @app.route("/api/pc_online")
 def get_value():
-    print(f"alive_pcs : {alive_pcs}")
-    return jsonify(alive_pcs)
+    return jsonify({
+        "pcs": alive_pcs,
+        "server_time": int(time.time())
+    })
 
 # ===== ROUTES POUR RECUPERER LES PC ALUME =====
 @app.route("/api/online", methods=["GET"])

@@ -714,7 +714,7 @@
             const res = await fetch("/api/pc_online");
             const data = await res.json();
             console.log(data)
-            const now = Date.now() / 1000; // Convert milliseconds to seconds
+            const now = data.server_time;
             const timeout = 30 /* define your timeout value here */;
 
             // Filter the list in one pass
