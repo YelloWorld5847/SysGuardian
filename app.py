@@ -8,25 +8,32 @@ from io import BytesIO
 from PIL import Image
 import base64
 import uuid
+from pathlib import Path
 import os
 
 # Identifiants du professeur
 ADMIN_USERNAME = "prof"
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+ADMIN_PASSWORD = "Je38N3udS5nW5u" # os.getenv("ADMIN_PASSWORD")
 
 last_screenshots = {}
 
-app = Flask(__name__)
-app.secret_key = os.getenv("secret_key")  # clé secrète pour les sessions
+import sys
+import os
+
+if getattr(sys, 'frozen', False):
+    # Dans exe PyInstaller
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    static_folder = os.path.join(sys._MEIPASS, 'static')
+    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+    # Dev normal
+    app = Flask(__name__)
+app.secret_key = "45fe4145f6e41s56fes654ef1s351ve8641zf65e1z6"  # clé secrète pour les sessions
 
 # Stockage des clients SSE
 sse_clients = []
-
 PC_STATUS = {}
-
 pending_files = {}
-
-
 commands = {}
 alive_pcs = []
 
@@ -64,10 +71,10 @@ def login_required(f):
 
 def add_command(command_info, pc_id):
     id = str(uuid.uuid4())
-    print(id)
+    # print(id)
     commands[id] = {"command_info": command_info, "pc_id": pc_id, "timestamp": time.time()}
-    print(commands)
-    print(f"Command Ajouté dans la liste, liste complète : {commands}")
+    # print(commands)
+    # print(f"Command Ajouté dans la liste, liste complète : {commands}")
 
 def get_commands(pc_id):
     command_filre = []
@@ -94,7 +101,7 @@ def send_sse_update(event_type, data):
 
 def del_command(command_id):
     del commands[command_id]
-    print("Command supprimé !")
+    # print("Command supprimé !")
 
 @app.route("/api/upload_screen", methods=["POST"])
 def upload_screen():
@@ -103,12 +110,12 @@ def upload_screen():
     if not pc_id or not file:
         return jsonify({"status": "error", "message": "pc_id ou image manquant"}), 400
 
-    print(file)
-    print(pc_id)
+    # print(file)
+    # print(pc_id)
 
     # on garde uniquement la dernière image en RAM
     last_screenshots[pc_id] = file.read()
-    print(f"last_screenshots[:500] : {str(last_screenshots)[:500]}")
+    # print(f"last_screenshots[:500] : {str(last_screenshots)[:500]}")
 
     return jsonify({"status": "success"}), 200
 
@@ -123,6 +130,39 @@ def get_screen(pc_id):
         as_attachment=False
     )
 
+@app.route('/api/screenshot/<pcid>', methods=['GET'])
+@login_required
+def save_screenshot(pcid):
+    img_bytes = last_screenshots.get(pcid)
+    print(f"last_screenshots keys: {list(last_screenshots.keys())}")
+    print(f"Demande pour: {pcid}")
+    if not img_bytes:
+        return jsonify(status='error', message='Pas de capture récente, nouvelle en cours...', wait=True), 404
+    
+    try:
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"{pcid}_{timestamp}.jpg"
+        
+        desktop = Path.home() / "Desktop" / "screenshots"
+        desktop.mkdir(exist_ok=True)
+        filepath = desktop / filename
+        
+        with open(filepath, 'wb') as f:
+            f.write(img_bytes)
+
+            
+        
+        # print(f"Sauvegardé: {filepath}")
+        return jsonify({'status': 'success', 'filename': filename})
+    
+    except Exception as e:
+        print(f"Erreur sauvegarde: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+
+
 # ===== ROUTES POUR RECUPERER LES COMMANDES =====
 @app.route("/api/commands", methods=["GET"])
 def get_text():
@@ -136,10 +176,8 @@ def get_text():
 
 @app.route("/api/pc_online")
 def get_value():
-    return jsonify({
-        "pcs": alive_pcs,
-        "server_time": int(time.time())
-    })
+    # print(f"alive_pcs : {alive_pcs}")
+    return jsonify(alive_pcs)
 
 # ===== ROUTES POUR RECUPERER LES PC ALUME =====
 @app.route("/api/online", methods=["GET"])
@@ -157,7 +195,7 @@ def update_pc_alive():
             "pc_id" : pc_id,
             "time": int(time.time())
         })
-    print(f"LISTE DES PC EN VIE : {alive_pcs}")
+    # print(f"LISTE DES PC EN VIE : {alive_pcs}")
     return "OK"
 
 # ===== ROUTES POUR RECEVOIR LES ACTIONS DU FRONTEND =====
@@ -171,7 +209,7 @@ def send_message():
     pc_name = data.get('pc_name')
     message = data.get('message')
     
-    print(f"Message reçu pour {pc_name}: {message}")
+    # print(f"Message reçu pour {pc_name}: {message}")
 
     add_command({"type": "MSG", "command": message}, pc_name)
     
@@ -195,7 +233,7 @@ def shutdown_pc():
     data = request.json
     pc_name = data.get('pc_name')
     
-    print(f"Demande d'extinction de {pc_name}")
+    # print(f"Demande d'extinction de {pc_name}")
     
     add_command({"type": "SHUTDOWN", "command": ""}, pc_name)
     
@@ -226,7 +264,7 @@ def upload_file():
                 "data": file.read()  # stocké en RAM
             })
             uploaded_files.append(file.filename)
-            print(f"Fichier mis en attente: {file.filename} pour {pc_name}")
+            # print(f"Fichier mis en attente: {file.filename} pour {pc_name}")
 
     send_sse_update('file_uploaded', {
         'pc_name': pc_name,
@@ -259,7 +297,7 @@ def get_files():
             "data": base64.b64encode(f["data"]).decode("utf-8")
         })
     
-    print(f"Envoi de {len(result)} fichier(s) à {pc_id}")
+    # print(f"Envoi de {len(result)} fichier(s) à {pc_id}")
     return jsonify(result)
 
 @app.route("/api/stream")
@@ -289,7 +327,7 @@ def stream():
 @login_required
 def index():
     pc_selected = request.args.get('pc_selected', "")
-    print(f"pc_selected : {pc_selected}")
+    # print(f"pc_selected : {pc_selected}")
     return render_template("index.html", pc_selected=pc_selected)
 
 @app.route("/map")
@@ -317,4 +355,12 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == "__main__":
-    app.run(debug=True, threaded=True)
+    import webbrowser
+    url = 'http://192.168.40.32:5000'
+    webbrowser.open(url)
+    app.run(
+        debug=False,
+        threaded=True,
+        host="0.0.0.0",
+        port=5000
+    )

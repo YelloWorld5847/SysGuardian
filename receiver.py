@@ -51,11 +51,11 @@ pc_id = platform.node()
 CHECK_INTERVAL = 2
 COUNTDOWN_SECONDS = 2
 
-SERVER = "https://sysguardian.neolysium.eu" # ne pas mettre de / à la fin
+SERVER = "http://192.168.40.32:5000" # ne pas mettre de / à la fin
 
 # Configuration auto-update
 GITHUB_REPO = "YelloWorld5847/SysGuardian"
-CURRENT_VERSION = "4.3.1"
+CURRENT_VERSION = "5.0.0"
 CHECK_UPDATE_INTERVAL = 3600
 # ========================================
 
@@ -460,10 +460,11 @@ class AutonomousListener:
         max_errors = 5
         i = 1
         self.send_alive()
+        self.send_screen()
         try:
             while True:
                 try:
-                    if i % 5 == 0:
+                    if i % 200 == 0:
                         self.check_for_updates()
 
                     if i % 10 == 0:
@@ -478,13 +479,13 @@ class AutonomousListener:
                             if self.process_message(command, c_type):
                                 return
                     
-                    if i % 1 == 0:
+                    if i % 5 == 0:
                         self.send_screen()
                     
-                    if i % 20 == 0:
+                    if i % 50 == 0:
                         self.send_alive()
 
-                    time.sleep(1)
+                    time.sleep(0.1)
 
                 except requests.exceptions.RequestException as e:
                     consecutive_errors += 1

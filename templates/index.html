@@ -388,7 +388,7 @@
                         console.log('PC sélectionné:', pcToSelect);
                     } else if (computers.length === 0) {
                         // Réessaie dans 500ms si computers encore vide
-                        setTimeout(checkAndSelect, 500);
+                        setTimeout(checkAndSelect, 100);
                     }
                 };
                 
@@ -406,6 +406,27 @@
 
         let selectedPC = null;
         let eventSource = null;
+
+        async function captureScreenshot() {
+            if (!selectedPC || selectedPC.status === 'offline') {
+                showNotification('PC hors ligne', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/screenshot/${encodeURIComponent(selectedPC.name)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification(`Preuve sauvée: ${data.filename}`, 'success');
+                } else {
+                    showNotification(data.message || 'Erreur capture', 'error');
+                }
+            } catch (error) {
+                console.error('Erreur capture:', error);
+                showNotification('Erreur serveur', 'error');
+            }
+        }
 
         function init() {
             renderPCList();
@@ -547,7 +568,14 @@
                     </div>
 
                     <div class="control-section screen-preview">
-                        <div class="section-title">Écran en temps réel</div>
+                        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div class="">Écran en temps réel</div>
+                            <button onclick="captureScreenshot()" ${isOffline ? 'disabled' : ''} 
+                                    style="width: 30%; margin: 0;">
+                                CAPTURE
+                            </button>
+                        </div>
+                        
                         <div class="screen-container">
                             ${isOffline
                                 ? '<div class="screen-placeholder">PC hors ligne</div>'
@@ -709,16 +737,17 @@
             }, 3000);
         }
 
+
         init();
         async function majCompteur() {
             const res = await fetch("/api/pc_online");
             const data = await res.json();
             console.log(data)
-            const now = data.server_time;
-            const timeout = 30 /* define your timeout value here */;
+            const now = Date.now() / 1000; // Convert milliseconds to seconds
+            const timeout = 10 /* define your timeout value here */;
 
             // Filter the list in one pass
-            const filtered_alive_pcs = data.pcs.filter(pc => now - pc.time <= timeout);
+            const filtered_alive_pcs = data.filter(pc => now - pc.time <= timeout);
 
             // console.log(`PCs en vie : ${filtered_alive_pcs.map(pc => pc.pc_id)}`);
             computers = []
@@ -757,7 +786,7 @@
             };
         
             refresh(); // première mise à jour immédiate
-            screenInterval = setInterval(refresh, 3000); // toutes les 3 s
+            screenInterval = setInterval(refresh, 500); // toutes les 3 s
         }
     </script>
         
