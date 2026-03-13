@@ -1,0 +1,3 @@
+exe serveur : pyinstaller --onefile --windowed --add-data "templates;templates" --add-data "static;static" app.py
+exe eleve : pyinstaller --onefile --windowed .\receiver.py
+activer env : .\.venv\Scripts\Activate.ps1

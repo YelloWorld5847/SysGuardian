@@ -13,7 +13,7 @@ import os
 
 # Identifiants du professeur
 ADMIN_USERNAME = "prof"
-ADMIN_PASSWORD = "Je38N3udS5nW5u" # os.getenv("ADMIN_PASSWORD")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
 last_screenshots = {}
 
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     url = 'http://192.168.40.32:5000'
     webbrowser.open(url)
     app.run(
-        debug=False,
+        debug=True,
         threaded=True,
         host="0.0.0.0",
         port=5000

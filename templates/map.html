@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>SysGuardian - Map</title>
 
     <style>
 
@@ -136,9 +136,20 @@
             height: calc(3px * var(--scale));
             top: calc(11px * var(--scale));
             left: calc(42px * var(--scale)); 
+            border-bottom-left-radius: 0px;
+            border-top-left-radius: 0px;
         }
 
         #PC-04 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(5px * var(--scale));
+            top: calc(9px * var(--scale));
+            left: calc(39.1px * var(--scale));
+            border-bottom-right-radius: 0px;
+        }
+
+        #PC-05 {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(4px * var(--scale));
@@ -154,7 +165,7 @@
             left: calc(41px * var(--scale));
         }
 
-        #PC-05 {
+        #PC-06 {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(6px * var(--scale));
@@ -174,7 +185,7 @@
             border-bottom-left-radius: 0px;
         }
 
-        #PC-06 {
+        #PC-07 {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(6px * var(--scale));
@@ -182,7 +193,7 @@
             left: calc(24px * var(--scale)); 
         }
         
-        #PC-07 {
+        #PC-08 {
             position: absolute;
             width: calc(6px * var(--scale));
             height: calc(3px * var(--scale));
@@ -190,23 +201,32 @@
             left: calc(17.8px * var(--scale)); 
         }
 
-        #PC-ADMIN {
+        #box-6 {
             position: absolute;
-            width: calc(6px * var(--scale));
-            height: calc(3px * var(--scale));
+            width: calc(2px * var(--scale));
+            height: calc(5px * var(--scale));
             top: calc(26px * var(--scale));
-            left: calc(15px * var(--scale)); 
+            left: calc(32.2px * var(--scale));
         }
 
-        #PC-08 {
+
+        #PC-ADMIN {
             position: absolute;
-            width: calc(3px * var(--scale));
-            height: calc(6px * var(--scale));
-            top: calc(23px * var(--scale));
-            left: calc(11.8px * var(--scale)); 
+            width: calc(9px * var(--scale));
+            height: calc(3px * var(--scale));
+            top: calc(26px * var(--scale));
+            left: calc(23px * var(--scale)); 
         }
 
         #PC-09 {
+            position: absolute;
+            width: calc(3px * var(--scale));
+            height: calc(6px * var(--scale));
+            top: calc(25px * var(--scale));
+            left: calc(11.8px * var(--scale)); 
+        }
+
+        #PC-10 {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(6px * var(--scale));
@@ -216,7 +236,7 @@
             border-bottom-left-radius: 0px;
         }
 
-        #PC-10 {
+        #PC-11 {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(5px * var(--scale));
@@ -226,7 +246,7 @@
             border-top-left-radius: 0px;
         }
 
-        #PC-11 {
+        #PC-12 {
             position: absolute;
             width: calc(6px * var(--scale));
             height: calc(3px * var(--scale));
@@ -236,7 +256,7 @@
             border-top-right-radius: 0px;
         }
 
-        #PC-12 {
+        #PC-13 {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(6px * var(--scale));
@@ -256,7 +276,7 @@
             border-bottom-right-radius: 0px;
         }
 
-        #box-4 {
+        #PC-RADIO {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(6px * var(--scale));
@@ -275,7 +295,7 @@
             border-bottom-left-radius: 0px;
         }
 
-        #PC-13 {
+        #PC-14 {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(6px * var(--scale));
@@ -283,7 +303,7 @@
             left: calc(0.3px * var(--scale));
         }
 
-        #PC-14 {
+        #PC-15 {
             position: absolute;
             width: calc(6px * var(--scale));
             height: calc(3px * var(--scale));
@@ -291,7 +311,7 @@
             left: calc(0.3px * var(--scale));
         }
 
-        #PC-15 {
+        #PC-16 {
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(4px * var(--scale));
@@ -314,6 +334,7 @@
         <button class="box" id="box-2"></button>
         <button class="pc" id="PC-06">PC-06</button>
         <button class="pc" id="PC-07">PC-07</button>
+        <button class="box" id="box-6"></button>
         <button class="pc" id="PC-ADMIN">ADMIN</button>
         <button class="pc" id="PC-08">PC-08</button>
         <button class="pc" id="PC-09">PC-09</button>
@@ -321,11 +342,12 @@
         <button class="pc" id="PC-11">PC-11</button>
         <button class="pc" id="PC-12">PC-12</button>
         <button class="box" id="box-3"></button>
-        <button class="box" id="box-4"></button>
+        <button class="pc" id="PC-RADIO">PC-RADIO</button>
         <button class="box" id="box-5"></button>
         <button class="pc" id="PC-13">PC-13</button>
         <button class="pc" id="PC-14">PC-14</button>
         <button class="pc" id="PC-15">PC-15</button>
+        <button class="pc" id="PC-16">PC-16</button>
     </div>
 
     <script>
@@ -376,6 +398,6 @@
         // Lancement immédiat + rafra\u00eechissement toutes les 5 secondes
         updateStatus();
         setInterval(updateStatus, 5000);
-    </script>
+    </script>;,
 </body>
 </html>
