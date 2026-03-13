@@ -9,17 +9,9 @@
     <style>
 
         :root {
-            --scale: 25;        /* ton facteur d’échelle */
-            --base-size: 10px;   /* taille de base en px */
+            --scale: 25;
+            --base-size: 10px;
         }
-
-        /* .box {
-            width: calc(var(--base-size) * var(--scale));
-            height: calc(20px * var(--scale)); 
-            background: red;
-        } */
-
-
 
         body {
             font-family: 'Courier New', monospace;
@@ -37,7 +29,7 @@
             border: 2px solid #ff6b35;
             color: #ff6b35;
             border-radius: 8px;
-            transition: background-color 0.35s ease, color 0.35s ease;
+            transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
         }
         
         .box {
@@ -60,14 +52,33 @@
 
         /* Clic (état enfoncé) */
         button.pc:active {
-            background: #be522b;   /* un peu plus foncé que #ff6b35 */
+            background: #be522b;
             border-color: #be522b;
             color: #0a0a0a;
         }
 
-        /* button.pc:active:after {
-            background: #d35a2e;
-        } */
+        /* PC en ligne */
+        .pc.online {
+            border-color: #22c55e;
+            color: #22c55e;
+            box-shadow: 0 0 8px #22c55e88;
+        }
+
+        /* PC hors ligne */
+        .pc.offline {
+            border-color: #ef4444;
+            color: #ef4444;
+            box-shadow: 0 0 8px #ef444488;
+        }
+
+        /* Survol conservé même avec status */
+        button.pc.online:hover,
+        button.pc.offline:hover {
+            background: #ff6b35;
+            border-color: #ff6b35;
+            color: #0a0a0a;
+            box-shadow: none;
+        }
 
         #background {
             position: relative;
@@ -107,8 +118,8 @@
             position: absolute;
             width: calc(3px * var(--scale));
             height: calc(5px * var(--scale));
-            top: calc(20px * var(--scale));    /* Y = 100px du haut */
-            left: calc(45px * var(--scale));   /* X = 200px de la gauche */
+            top: calc(20px * var(--scale));
+            left: calc(45px * var(--scale));
         }
 
         #PC-02 {
@@ -315,19 +326,56 @@
         <button class="pc" id="PC-13">PC-13</button>
         <button class="pc" id="PC-14">PC-14</button>
         <button class="pc" id="PC-15">PC-15</button>
-
     </div>
+
     <script>
-        console.log('SCRIPT CHARGÉ');
+        console.log('SCRIPT CHARG\u00c9');
+
+        // Timeout (en secondes) au-delà duquel un PC est considéré offline
+        const OFFLINE_TIMEOUT = 30;
+
         const pcs = document.querySelectorAll('.pc');
         pcs.forEach((el) => {
-          el.addEventListener('click', function (event) {
-            console.log('Clique sur :', event.target.id, 'à', Date.now());
-            // Construction de l'URL avec paramètre GET
-            const url = `{{ url_for('index') }}?pc_selected=${encodeURIComponent(event.target.id)}`;
-            window.location.href = url;
-          });
+            el.addEventListener('click', function (event) {
+                console.log('Clique sur :', event.target.id, '\u00e0', Date.now());
+                const url = `{{ url_for('index') }}?pc_selected=${encodeURIComponent(event.target.id)}`;
+                window.location.href = url;
+            });
         });
+
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/pc_online');
+                const alivePcs = await res.json(); // [{ pc_id: "PC-01", time: 1234567890 }, ...]
+
+                const now = Math.floor(Date.now() / 1000);
+
+                // Construire un map pc_id -> time
+                const onlineMap = {};
+                alivePcs.forEach(pc => {
+                    onlineMap[pc.pc_id] = pc.time;
+                });
+
+                // Appliquer les classes online/offline sur chaque bouton .pc
+                pcs.forEach(el => {
+                    const pcId = el.id;
+                    el.classList.remove('online', 'offline');
+
+                    if (pcId in onlineMap && (now - onlineMap[pcId]) <= OFFLINE_TIMEOUT) {
+                        el.classList.add('online');
+                    } else {
+                        el.classList.add('offline');
+                    }
+                });
+
+            } catch (e) {
+                console.error('Erreur r\u00e9cup\u00e9ration statut PCs :', e);
+            }
+        }
+
+        // Lancement immédiat + rafra\u00eechissement toutes les 5 secondes
+        updateStatus();
+        setInterval(updateStatus, 5000);
     </script>
 </body>
 </html>
